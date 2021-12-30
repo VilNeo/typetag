@@ -295,6 +295,7 @@
 //! [`inventory`]: https://github.com/dtolnay/inventory
 //! [`ctor`]: https://github.com/mmastrac/rust-ctor
 //! [`erased-serde`]: https://github.com/dtolnay/erased-serde
+#![feature(specialization)]
 
 #![allow(
 clippy::missing_errors_doc,
@@ -343,6 +344,10 @@ pub type DeserializeFn<T> = fn(&mut dyn erased_serde::Deserializer) -> erased_se
 
 #[doc(hidden)]
 pub type ComparisonFn = fn(&str) -> bool;
+
+pub trait PassKey {
+    fn typetag_passed_key(&mut self, _key: &str);
+}
 
 #[repr(transparent)]
 pub struct WrappedComparisonFn(pub ComparisonFn);

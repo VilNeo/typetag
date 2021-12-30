@@ -125,6 +125,7 @@ mod externally_tagged_own_compared {
 }
 
 mod externally_tagged_default {
+    use typetag::PassKey;
     use super::B;
     use super::{Deserialize, Serialize};
 
@@ -137,6 +138,7 @@ mod externally_tagged_default {
     #[derive(Serialize, Deserialize)]
     struct Default {
         default: u8,
+        key: Option<String>,
     }
 
     fn trait_take_a_or_b(key: &str) -> bool {
@@ -148,10 +150,11 @@ mod externally_tagged_default {
     }
 
     #[typetag::serde]
-    trait Trait {
+    trait Trait : typetag::PassKey {
         fn assert_a_or_b_are_11(&self);
         fn assert_b_is_11(&self);
         fn assert_default_is_11(&self);
+        fn assert_key_is(&self, key: &str);
     }
 
     #[typetag::serde(compare = trait_take_a_or_b)]
@@ -164,6 +167,14 @@ mod externally_tagged_default {
         }
         fn assert_default_is_11(&self) {
             panic!("is not Default!");
+        }
+        fn assert_key_is(&self, key: &str) {
+            panic!("AorB has no key field");
+        }
+    }
+
+    impl PassKey for AorB {
+        fn typetag_passed_key(&mut self, _key: &str) {
         }
     }
 
@@ -178,6 +189,14 @@ mod externally_tagged_default {
         fn assert_default_is_11(&self) {
             panic!("is not Default!");
         }
+        fn assert_key_is(&self, key: &str) {
+            panic!("B has no key field");
+        }
+    }
+
+    impl PassKey for B {
+        fn typetag_passed_key(&mut self, _key: &str) {
+        }
     }
 
     #[typetag::serde(default)]
@@ -190,6 +209,15 @@ mod externally_tagged_default {
         }
         fn assert_default_is_11(&self) {
             assert_eq!(self.default, 11);
+        }
+        fn assert_key_is(&self, key: &str) {
+            assert_eq!(self.key, Some(key.to_string()));
+        }
+    }
+
+    impl PassKey for Default {
+        fn typetag_passed_key(&mut self, key: &str) {
+            self.key = Some(key.to_string());
         }
     }
 
@@ -212,6 +240,7 @@ mod externally_tagged_default {
         let json = r#"{"X":{"default":11}}"#;
         let trait_object: Box<dyn Trait> = serde_json::from_str(json).unwrap();
         trait_object.assert_default_is_11();
+        trait_object.assert_key_is("X");
     }
 }
 
